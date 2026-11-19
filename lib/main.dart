@@ -26,32 +26,41 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Firebase CRUD',
       theme: ThemeData(primarySwatch: Colors.teal),
-      home: StreamBuilder<User?>(
-        stream: auth.userStream,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
+      home: ValueListenableBuilder<bool>(
+        valueListenable: AuthService.googleSignInPending,
+        builder: (context, googleSignInPending, _) {
+          return StreamBuilder<User?>(
+            stream: auth.userStream,
+            builder: (context, snapshot) {
+              if (googleSignInPending) {
+                return const LoginPage();
+              }
 
-          if (snapshot.hasData) {
-            final user = snapshot.data!;
-            // Check if the user signed in using Google.
-            final isGoogleUser = user.providerData.any(
-              (provider) => provider.providerId == 'google.com',
-            );
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              }
 
-            // Google users can proceed directly.
-            // Email/password users must verify their email.
-            if (isGoogleUser || user.emailVerified) {
-              return const HomePage();
-            }
+              if (snapshot.hasData) {
+                final user = snapshot.data!;
+                // Check if the user signed in using Google.
+                final isGoogleUser = user.providerData.any(
+                  (provider) => provider.providerId == 'google.com',
+                );
 
-            return const LoginPage();
-          }
+                // Google users can proceed directly.
+                // Email/password users must verify their email.
+                if (isGoogleUser || user.emailVerified) {
+                  return const HomePage();
+                }
 
-          return const LoginPage();
+                return const LoginPage();
+              }
+
+              return const LoginPage();
+            },
+          );
         },
       ),
     );
