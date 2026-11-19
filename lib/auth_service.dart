@@ -9,9 +9,10 @@ class AuthService {
   Future<User?> signInWithGoogle() async {
     if (kIsWeb) {
       final GoogleAuthProvider googleProvider = GoogleAuthProvider();
-      googleProvider.setCustomParameters({'prompt': 'select_account'});
-      await _auth.signInWithRedirect(googleProvider);
-      return null;
+      final UserCredential userCredential = await _auth.signInWithPopup(
+        googleProvider,
+      );
+      return userCredential.user;
     } else {
       final googleUser = await _googleSignIn!.signIn();
       if (googleUser == null) return null;
@@ -53,7 +54,15 @@ class AuthService {
 
   Future<bool> isEmailVerified(User user) async {
     await user.reload();
-    return _auth.currentUser?.emailVerified ?? false;
+    final currentUser = _auth.currentUser;
+    return currentUser != null && hasVerifiedEmail(currentUser);
+  }
+
+  bool hasVerifiedEmail(User user) {
+    return user.emailVerified ||
+        user.providerData.any(
+          (profile) => profile.providerId == GoogleAuthProvider.PROVIDER_ID,
+        );
   }
 
   Future<void> sendEmailVerification(User user) {

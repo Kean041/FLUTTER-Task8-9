@@ -20,19 +20,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final auth = AuthService();
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Firebase CRUD',
       theme: ThemeData(primarySwatch: Colors.teal),
       home: StreamBuilder<User?>(
-        stream: AuthService().userStream,
+        stream: auth.userStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(
               body: Center(child: CircularProgressIndicator()),
             );
           }
-          if (snapshot.hasData && snapshot.data!.emailVerified) {
+          if (snapshot.hasData && auth.hasVerifiedEmail(snapshot.data!)) {
             return const HomePage();
           }
           return const LoginPage();
