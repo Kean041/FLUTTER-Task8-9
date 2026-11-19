@@ -53,10 +53,10 @@ class AuthService {
   }
 
   Future<void> signOut() async {
+    await _auth.signOut();
     if (!kIsWeb) {
       await _googleSignIn?.signOut();
     }
-    await _auth.signOut();
   }
 
   Stream<User?> get userStream => _auth.authStateChanges();

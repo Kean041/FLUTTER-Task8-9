@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'auth_service.dart';
 import 'login_page.dart';
@@ -12,90 +13,125 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final AuthService auth = AuthService();
+
   final TextEditingController emailCtrl = TextEditingController();
   final TextEditingController passwordCtrl = TextEditingController();
+
   bool loading = false;
+
+  Future<void> register() async {
+    if (emailCtrl.text.trim().isEmpty || passwordCtrl.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your email and password.')),
+      );
+      return;
+    }
+
+    setState(() => loading = true);
+
+    try {
+      final user = await auth.registerWithEmail(
+        emailCtrl.text.trim(),
+        passwordCtrl.text,
+      );
+
+      if (user == null) {
+        throw Exception('Registration failed. Please try again.');
+      }
+
+      if (!user.emailVerified) {
+        await user.sendEmailVerification();
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Verification email sent. Please check your inbox.'),
+        ),
+      );
+
+      await auth.signOut();
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Firebase Error: ${e.code} - ${e.message}')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
+    } finally {
+      if (mounted) {
+        setState(() => loading = false);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    emailCtrl.dispose();
+    passwordCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Register')),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: emailCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                ),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextField(
+              controller: emailCtrl,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: passwordCtrl,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(),
-                ),
+            ),
+            const SizedBox(height: 15),
+            TextField(
+              controller: passwordCtrl,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Password',
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(height: 12),
-              ElevatedButton(
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: loading ? null : register,
                 child: loading
-                    ? const CircularProgressIndicator(color: Colors.white)
+                    ? const CircularProgressIndicator()
                     : const Text('Register'),
-                onPressed: () async {
-                  if (emailCtrl.text.isEmpty || passwordCtrl.text.isEmpty) {
-                    return;
-                  }
-                  setState(() => loading = true);
-                  final user = await auth.registerWithEmail(
-                    emailCtrl.text,
-                    passwordCtrl.text,
-                  );
-                  if (!context.mounted) return;
-                  setState(() => loading = false);
-
-                  if (user != null) {
-                    if (!user.emailVerified) {
-                      await user.sendEmailVerification();
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Verification email sent. Please check your inbox.',
-                          ),
-                        ),
+              ),
+            ),
+            TextButton(
+              onPressed: loading
+                  ? null
+                  : () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LoginPage()),
                       );
-                    }
-                    await auth.signOut();
-                    if (!context.mounted) return;
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LoginPage()),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Registration failed.')),
-                    );
-                  }
-                },
-              ),
-              const SizedBox(height: 12),
-              TextButton(
-                child: const Text('Already have an account? Login'),
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginPage()),
-                  );
-                },
-              ),
-            ],
-          ),
+                    },
+              child: const Text('Already have an account? Login'),
+            ),
+          ],
         ),
       ),
     );

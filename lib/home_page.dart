@@ -19,8 +19,6 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _signOut() async {
     await AuthService().signOut();
-    if (!mounted) return;
-    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   @override

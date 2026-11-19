@@ -21,6 +21,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = AuthService();
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Firebase CRUD',
@@ -33,9 +34,24 @@ class MyApp extends StatelessWidget {
               body: Center(child: CircularProgressIndicator()),
             );
           }
+
           if (snapshot.hasData) {
-            return const HomePage();
+            final user = snapshot.data!;
+
+            // Check if the user signed in using Google.
+            final isGoogleUser = user.providerData.any(
+              (provider) => provider.providerId == 'google.com',
+            );
+
+            // Google users can proceed directly.
+            // Email/password users must verify their email.
+            if (isGoogleUser || user.emailVerified) {
+              return const HomePage();
+            }
+
+            return const LoginPage();
           }
+
           return const LoginPage();
         },
       ),
