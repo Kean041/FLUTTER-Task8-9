@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
               body: Center(child: CircularProgressIndicator()),
             );
           }
-          if (snapshot.hasData) {
+          if (snapshot.hasData && snapshot.data!.emailVerified) {
             return const HomePage();
           }
           return const LoginPage();

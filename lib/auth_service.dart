@@ -9,10 +9,9 @@ class AuthService {
   Future<User?> signInWithGoogle() async {
     if (kIsWeb) {
       final GoogleAuthProvider googleProvider = GoogleAuthProvider();
-      final UserCredential userCredential = await _auth.signInWithPopup(
-        googleProvider,
-      );
-      return userCredential.user;
+      googleProvider.setCustomParameters({'prompt': 'select_account'});
+      await _auth.signInWithRedirect(googleProvider);
+      return null;
     } else {
       final googleUser = await _googleSignIn!.signIn();
       if (googleUser == null) return null;
@@ -29,7 +28,7 @@ class AuthService {
   Future<User?> registerWithEmail(String email, String password) async {
     try {
       final userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
+        email: email.trim(),
         password: password,
       );
       return userCredential.user;
@@ -42,7 +41,7 @@ class AuthService {
   Future<User?> signInWithEmail(String email, String password) async {
     try {
       final userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
+        email: email.trim(),
         password: password,
       );
       return userCredential.user;
@@ -50,6 +49,15 @@ class AuthService {
       debugPrint('Login error: $e');
       return null;
     }
+  }
+
+  Future<bool> isEmailVerified(User user) async {
+    await user.reload();
+    return _auth.currentUser?.emailVerified ?? false;
+  }
+
+  Future<void> sendEmailVerification(User user) {
+    return user.sendEmailVerification();
   }
 
   Future<void> sendPasswordResetEmail(String email) {
@@ -63,5 +71,5 @@ class AuthService {
     }
   }
 
-  Stream<User?> get userStream => _auth.authStateChanges();
+  Stream<User?> get userStream => _auth.userChanges();
 }

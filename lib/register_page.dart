@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'auth_service.dart';
 import 'login_page.dart';
@@ -48,20 +49,19 @@ class _RegisterPageState extends State<RegisterPage> {
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text('Register'),
                 onPressed: () async {
-                  if (emailCtrl.text.isEmpty || passwordCtrl.text.isEmpty) {
+                  final email = emailCtrl.text.trim();
+                  final password = passwordCtrl.text;
+                  if (email.isEmpty || password.isEmpty) {
                     return;
                   }
                   setState(() => loading = true);
-                  final user = await auth.registerWithEmail(
-                    emailCtrl.text,
-                    passwordCtrl.text,
-                  );
+                  final user = await auth.registerWithEmail(email, password);
                   if (!context.mounted) return;
                   setState(() => loading = false);
 
                   if (user != null) {
-                    if (!user.emailVerified) {
-                      await user.sendEmailVerification();
+                    try {
+                      await auth.sendEmailVerification(user);
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -70,6 +70,13 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       );
+                    } on FirebaseAuthException catch (error) {
+                      if (!context.mounted) return;
+                      final message = error.code == 'too-many-requests'
+                          ? 'Too many attempts. Please try again later.'
+                          : 'Account created, but the verification email could not be sent.';
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(SnackBar(content: Text(message)));
                     }
                     await auth.signOut();
                     if (!context.mounted) return;

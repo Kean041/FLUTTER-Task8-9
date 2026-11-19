@@ -18,6 +18,34 @@ class _LoginPageState extends State<LoginPage> {
   bool loading = false;
   bool sendingReset = false;
 
+  Future<void> _signInWithGoogle() async {
+    setState(() => loading = true);
+    try {
+      await auth.signInWithGoogle();
+    } on FirebaseAuthException catch (error) {
+      if (!mounted) return;
+      final message = switch (error.code) {
+        'operation-not-allowed' =>
+          'Google sign-in is not enabled in Firebase Authentication.',
+        'unauthorized-domain' =>
+          'This domain is not authorized for Firebase Authentication.',
+        _ => 'Google sign-in failed (${error.code}). Please try again.',
+      };
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+    } catch (error) {
+      debugPrint('Google sign-in error: $error');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to sign in with Google. Please try again.'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
   Future<void> _sendPasswordResetEmail() async {
     final email = emailCtrl.text.trim();
     if (email.isEmpty) {
@@ -108,7 +136,8 @@ class _LoginPageState extends State<LoginPage> {
                   setState(() => loading = false);
 
                   if (user != null) {
-                    if (!user.emailVerified) {
+                    final emailVerified = await auth.isEmailVerified(user);
+                    if (!emailVerified) {
                       await auth.signOut();
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -142,12 +171,7 @@ class _LoginPageState extends State<LoginPage> {
               OutlinedButton.icon(
                 icon: const Icon(Icons.login),
                 label: const Text('Sign in with Google'),
-                onPressed: () async {
-                  setState(() => loading = true);
-                  await auth.signInWithGoogle();
-                  if (!context.mounted) return;
-                  setState(() => loading = false);
-                },
+                onPressed: loading ? null : _signInWithGoogle,
               ),
               const SizedBox(height: 12),
               TextButton(
