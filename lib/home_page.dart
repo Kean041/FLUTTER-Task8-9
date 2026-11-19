@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'auth_service.dart';
 import 'crud_service.dart';
+import 'login_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,6 +20,12 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _signOut() async {
     await AuthService().signOut();
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+      (route) => false,
+    );
   }
 
   @override

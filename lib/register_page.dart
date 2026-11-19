@@ -54,9 +54,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
       if (!mounted) return;
 
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const LoginPage()),
+        (route) => false,
       );
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
