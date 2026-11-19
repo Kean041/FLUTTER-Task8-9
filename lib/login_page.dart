@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'auth_service.dart';
@@ -16,6 +17,37 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailCtrl = TextEditingController();
   final TextEditingController passwordCtrl = TextEditingController();
   bool loading = false;
+  bool sendingPasswordReset = false;
+
+  Future<void> _sendPasswordResetEmail() async {
+    final email = emailCtrl.text.trim();
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your email address.')),
+      );
+      return;
+    }
+
+    setState(() => sendingPasswordReset = true);
+    try {
+      await auth.sendPasswordResetEmail(email);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password reset email sent. Check your inbox.'),
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message ?? 'Unable to send password reset email.'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => sendingPasswordReset = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +77,19 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: sendingPasswordReset
+                      ? null
+                      : _sendPasswordResetEmail,
+                  child: Text(
+                    sendingPasswordReset
+                        ? 'Sending reset email...'
+                        : 'Forgot your password?',
+                  ),
+                ),
+              ),
               ElevatedButton(
                 child: loading
                     ? const CircularProgressIndicator(color: Colors.white)
