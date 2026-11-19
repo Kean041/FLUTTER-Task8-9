@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import 'auth_service.dart';
 import 'crud_service.dart';
 
 class HomePage extends StatefulWidget {
@@ -15,6 +16,12 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController nameCtrl = TextEditingController();
   final TextEditingController qtyCtrl = TextEditingController();
   bool showFavoritesOnly = false;
+
+  Future<void> _signOut() async {
+    await AuthService().signOut();
+    if (!mounted) return;
+    Navigator.of(context).popUntil((route) => route.isFirst);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +44,11 @@ class _HomePageState extends State<HomePage> {
                 showFavoritesOnly = !showFavoritesOnly;
               });
             },
+          ),
+          IconButton(
+            tooltip: 'Sign out',
+            icon: const Icon(Icons.logout, color: Colors.white),
+            onPressed: _signOut,
           ),
         ],
       ), // AppBar
