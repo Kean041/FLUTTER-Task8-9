@@ -75,9 +75,7 @@ class _LoginPageState extends State<LoginPage> {
                     } else {
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => const HomePage(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const HomePage()),
                       );
                     }
                   } else {
@@ -111,9 +109,7 @@ class _LoginPageState extends State<LoginPage> {
                   if (user != null) {
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(
-                        builder: (_) => const HomePage(),
-                      ),
+                      MaterialPageRoute(builder: (_) => const HomePage()),
                     );
                   }
                 },

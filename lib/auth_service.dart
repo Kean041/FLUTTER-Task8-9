@@ -6,26 +6,29 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn? _googleSignIn = kIsWeb ? null : GoogleSignIn();
 
+  // GOOGLE SIGN-IN
   Future<User?> signInWithGoogle() async {
     if (kIsWeb) {
-      final GoogleAuthProvider googleProvider = GoogleAuthProvider();
-      final UserCredential userCredential = await _auth.signInWithPopup(
+      GoogleAuthProvider googleProvider = GoogleAuthProvider();
+      UserCredential userCredential = await _auth.signInWithPopup(
         googleProvider,
       );
       return userCredential.user;
+    } else {
+      final googleUser = await _googleSignIn!.signIn();
+      if (googleUser == null) return null;
+
+      final googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      return (await _auth.signInWithCredential(credential)).user;
     }
-
-    final googleUser = await _googleSignIn!.signIn();
-    if (googleUser == null) return null;
-
-    final googleAuth = await googleUser.authentication;
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-    return (await _auth.signInWithCredential(credential)).user;
   }
 
+  // EMAIL/PASSWORD REGISTER
   Future<User?> registerWithEmail(String email, String password) async {
     try {
       final userCredential = await _auth.createUserWithEmailAndPassword(
@@ -47,11 +50,12 @@ class AuthService {
       );
       return userCredential.user;
     } catch (e) {
-      debugPrint('Login error: $e');
+      debugPrint('Sign-in error: $e');
       return null;
     }
   }
 
+  // SIGN OUT
   Future<void> signOut() async {
     await _auth.signOut();
     if (!kIsWeb) {

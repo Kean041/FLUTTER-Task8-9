@@ -37,7 +37,6 @@ class MyApp extends StatelessWidget {
 
           if (snapshot.hasData) {
             final user = snapshot.data!;
-
             // Check if the user signed in using Google.
             final isGoogleUser = user.providerData.any(
               (provider) => provider.providerId == 'google.com',
