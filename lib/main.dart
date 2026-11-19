@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
               body: Center(child: CircularProgressIndicator()),
             );
           }
-          if (snapshot.hasData && auth.hasVerifiedEmail(snapshot.data!)) {
+          if (snapshot.hasData) {
             return const HomePage();
           }
           return const LoginPage();

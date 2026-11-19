@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 import 'auth_service.dart';
 import 'login_page.dart';
@@ -49,19 +48,20 @@ class _RegisterPageState extends State<RegisterPage> {
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text('Register'),
                 onPressed: () async {
-                  final email = emailCtrl.text.trim();
-                  final password = passwordCtrl.text;
-                  if (email.isEmpty || password.isEmpty) {
+                  if (emailCtrl.text.isEmpty || passwordCtrl.text.isEmpty) {
                     return;
                   }
                   setState(() => loading = true);
-                  final user = await auth.registerWithEmail(email, password);
+                  final user = await auth.registerWithEmail(
+                    emailCtrl.text,
+                    passwordCtrl.text,
+                  );
                   if (!context.mounted) return;
                   setState(() => loading = false);
 
                   if (user != null) {
-                    try {
-                      await auth.sendEmailVerification(user);
+                    if (!user.emailVerified) {
+                      await user.sendEmailVerification();
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -70,17 +70,13 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       );
-                    } on FirebaseAuthException catch (error) {
-                      if (!context.mounted) return;
-                      final message = error.code == 'too-many-requests'
-                          ? 'Too many attempts. Please try again later.'
-                          : 'Account created, but the verification email could not be sent.';
-                      ScaffoldMessenger.of(context)
-                          .showSnackBar(SnackBar(content: Text(message)));
                     }
                     await auth.signOut();
                     if (!context.mounted) return;
-                    Navigator.pop(context);
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginPage()),
+                    );
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Registration failed.')),
